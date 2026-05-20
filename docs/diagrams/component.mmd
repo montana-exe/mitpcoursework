@@ -1,0 +1,25 @@
+flowchart LR
+    subgraph Python
+        API[routeopt.api]
+        Models[routeopt.models]
+        CorePy[routeopt.core]
+        Viz[routeopt.visualization]
+    end
+    subgraph Native
+        CABI[routeopt C API]
+        Solver[GeneticSolver]
+        OCL[OpenCLEvaluator]
+    end
+    subgraph Infra
+        Docker[Dockerfile]
+        Compose[docker-compose.yml]
+        CI[GitHub Actions]
+    end
+    API --> Models
+    API --> CorePy
+    Viz --> Models
+    CorePy --> CABI
+    CABI --> Solver
+    Solver --> OCL
+    CI --> Docker
+    Compose --> Docker

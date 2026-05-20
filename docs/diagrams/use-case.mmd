@@ -1,0 +1,9 @@
+flowchart TB
+    Dispatcher[Диспетчер] --> Load[Загрузить точки доставки]
+    Dispatcher --> Optimize[Запустить оптимизацию]
+    Dispatcher --> View[Просмотреть маршруты]
+    Dispatcher --> Compare[Сравнить параметры запуска]
+    Developer[Разработчик] --> Tests[Запустить тесты]
+    Developer --> Build[Собрать контейнер]
+    CI[GitHub Actions] --> Tests
+    CI --> Static[Выполнить статический анализ]

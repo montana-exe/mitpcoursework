@@ -1,0 +1,8 @@
+flowchart TB
+    Client[HTTP client] --> Host[Host OS]
+    Host --> Container[Docker container: routeopt-api]
+    Container --> Uvicorn[Uvicorn]
+    Uvicorn --> FastAPI[FastAPI app]
+    FastAPI --> SharedLib[librouteopt_core.so]
+    SharedLib --> OpenCLRuntime[OpenCL runtime]
+    SharedLib --> CPUFallback[CPU fallback]

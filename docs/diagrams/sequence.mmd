@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant U as Пользователь
+    participant A as FastAPI
+    participant P as Pydantic
+    participant N as NativeRouteOptimizer
+    participant C as C API
+    participant G as GeneticSolver
+    participant O as OpenCLEvaluator
+    U->>A: POST /optimize
+    A->>P: validate(request)
+    P-->>A: OptimizationRequest
+    A->>N: optimize(request)
+    N->>C: routeopt_optimize(arrays)
+    C->>G: solve(problem)
+    G->>O: evaluate_cycle_distances(population)
+    O-->>G: distance vector
+    G-->>C: Solution
+    C-->>N: routes, offsets, distance
+    N-->>A: OptimizationResponse
+    A-->>U: JSON result
