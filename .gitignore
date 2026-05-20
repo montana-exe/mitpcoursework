@@ -1,0 +1,15 @@
+build/
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.pyd
+*.so
+*.dll
+benchmarks/results.json
+data/
+docs/course-paper/*.pdf
+docs/course-paper/*.docx
+methodical-guidelines-2026.pdf
+methodical-guidelines-2026.txt
