@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake g++ ocl-icd-opencl-dev
+      - name: Build C++
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j 2
+      - name: Run C++ tests
+        run: ctest --test-dir build --output-on-failure
+      - name: Install Python dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Run Python tests
+        env:
+          PYTHONPATH: python
+          ROUTEOPT_LIB: ${{ github.workspace }}/build/librouteopt_core.so
+        run: pytest
+      - name: Lint Python
+        run: ruff check python benchmarks scripts

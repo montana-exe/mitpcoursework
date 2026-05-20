@@ -1,0 +1,8 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ROUTEOPT_LIB: /app/build/librouteopt_core.so
+      PYTHONPATH: /app/python
