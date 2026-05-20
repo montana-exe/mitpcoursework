@@ -1,0 +1,9 @@
+flowchart LR
+    Client[HTTP client / experiment script] --> API[FastAPI service]
+    API --> Models[Pydantic validation]
+    API --> PyCore[Python ctypes adapter]
+    PyCore --> CAPI[C ABI boundary]
+    CAPI --> Core[C++ genetic solver]
+    Core --> CPU[CPU fitness evaluation]
+    Core -. optional .-> OpenCL[OpenCL fitness kernel]
+    API --> Viz[Matplotlib route visualization]
