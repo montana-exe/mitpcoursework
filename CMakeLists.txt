@@ -9,6 +9,7 @@ option(ROUTEOPT_ENABLE_OPENCL "Build with OpenCL support when available" ON)
 
 add_library(routeopt_core
     cpp/src/GeneticSolver.cpp
+    cpp/src/OpenCLEvaluator.cpp
     cpp/src/CApi.cpp
 )
 target_include_directories(routeopt_core PUBLIC cpp/include)

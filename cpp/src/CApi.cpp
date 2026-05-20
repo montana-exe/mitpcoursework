@@ -1,6 +1,7 @@
 #include "routeopt/CApi.h"
 
 #include "routeopt/GeneticSolver.h"
+#include "routeopt/OpenCLEvaluator.h"
 
 #include <exception>
 #include <vector>
@@ -91,6 +92,10 @@ int routeopt_optimize(
 
 const char* routeopt_version() {
     return "0.1.0";
+}
+
+int routeopt_opencl_available() {
+    return routeopt::OpenCLEvaluator{}.available() ? 1 : 0;
 }
 
 }

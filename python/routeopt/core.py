@@ -68,7 +68,13 @@ class NativeRouteOptimizer:
             load = sum(nodes[index].demand for index in node_indexes)
             routes.append(RouteResult(customer_ids=customer_ids, load=load))
 
-        backend = "native-opencl-requested" if request.settings.prefer_gpu else "native-cpu"
+        backend = "native-cpu"
+        if request.settings.prefer_gpu:
+            backend = (
+                "native-opencl-distance-cpu-constraints"
+                if self._opencl_available()
+                else "native-cpu-opencl-unavailable"
+            )
         return OptimizationResponse(
             routes=routes,
             total_distance=total_distance.value,
@@ -120,6 +126,13 @@ class NativeRouteOptimizer:
             ctypes.POINTER(ctypes.c_int),
         ]
         self._lib.routeopt_optimize.restype = ctypes.c_int
+        self._lib.routeopt_opencl_available.argtypes = []
+        self._lib.routeopt_opencl_available.restype = ctypes.c_int
+
+    def _opencl_available(self) -> bool:
+        if self._lib is None:
+            return False
+        return bool(self._lib.routeopt_opencl_available())
 
     @staticmethod
     def _discover_library() -> str | None:

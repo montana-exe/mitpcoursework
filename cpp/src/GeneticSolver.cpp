@@ -1,5 +1,7 @@
 #include "routeopt/GeneticSolver.h"
 
+#include "routeopt/OpenCLEvaluator.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -79,7 +81,7 @@ Solution GeneticSolver::decode(const Problem& problem, const std::vector<std::si
     }
 
     Solution solution;
-    solution.backend = config_.prefer_gpu ? "opencl-requested-cpu-evaluation" : "cpu";
+    solution.backend = config_.prefer_gpu ? OpenCLEvaluator{}.backend_name() : "cpu";
 
     Route current;
     for (const auto node : chromosome) {
@@ -212,10 +214,18 @@ Solution GeneticSolver::solve(const Problem& problem) {
 
     const auto elite_count = std::max<std::size_t>(1, static_cast<std::size_t>(config_.population_size * config_.elite_fraction));
 
+    OpenCLEvaluator opencl;
+    const auto use_opencl_distance = config_.prefer_gpu && opencl.available();
+
     for (std::size_t generation = 0; generation < config_.generations; ++generation) {
+        std::vector<double> gpu_cycle_distances;
+        if (use_opencl_distance) {
+            gpu_cycle_distances = opencl.evaluate_cycle_distances(problem, population);
+        }
         for (std::size_t i = 0; i < population.size(); ++i) {
             const auto solution = decode(problem, population[i]);
-            fitness[i] = solution.total_distance + solution.penalty;
+            const auto distance_component = use_opencl_distance ? gpu_cycle_distances[i] : solution.total_distance;
+            fitness[i] = distance_component + solution.penalty;
         }
         std::sort(order.begin(), order.end(), [&](std::size_t lhs, std::size_t rhs) {
             return fitness[lhs] < fitness[rhs];
@@ -241,7 +251,9 @@ Solution GeneticSolver::solve(const Problem& problem) {
         fitness[i] = solution.total_distance + solution.penalty;
     }
     auto best = static_cast<std::size_t>(std::distance(fitness.begin(), std::min_element(fitness.begin(), fitness.end())));
-    return decode(problem, population[best]);
+    auto solution = decode(problem, population[best]);
+    solution.backend = config_.prefer_gpu ? opencl.backend_name() : "cpu";
+    return solution;
 }
 
 }  // namespace routeopt

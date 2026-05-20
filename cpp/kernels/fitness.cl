@@ -1,3 +1,5 @@
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+
 __kernel void route_distance_kernel(
     __global const double2* points,
     __global const int* chromosomes,

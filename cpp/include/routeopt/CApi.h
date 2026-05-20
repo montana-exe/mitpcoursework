@@ -30,4 +30,6 @@ ROUTEOPT_API int routeopt_optimize(
 
 ROUTEOPT_API const char* routeopt_version();
 
+ROUTEOPT_API int routeopt_opencl_available();
+
 }
