@@ -80,7 +80,7 @@ python benchmarks/benchmark_cpu_gpu.py --cli build/routeopt_cli --customers 250 
 
 ## Публичная демонстрация
 
-Workflow `pages.yml` публикует русскоязычный интерфейс на GitHub Pages. После включения источника **GitHub Actions** в настройках Pages репозитория страница доступна по адресу:
+Workflow `pages.yml` публикует русскоязычный интерфейс на GitHub Pages. Сначала в настройках репозитория требуется открыть **Settings -> Pages** и выбрать источник **GitHub Actions**, после чего вручную запустить workflow `pages` на вкладке **Actions**. Это одноразовая настройка владельца репозитория; встроенный токен workflow не может включить Pages самостоятельно. После успешного развёртывания страница доступна по адресу:
 
 ```text
 https://montana-exe.github.io/mitpcoursework/
