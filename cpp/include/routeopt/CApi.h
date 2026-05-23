@@ -11,6 +11,7 @@ extern "C" {
 ROUTEOPT_API int routeopt_optimize(
     const double* xy,
     const double* demand,
+    const double* service_time,
     int node_count,
     int depot_index,
     double vehicle_capacity,

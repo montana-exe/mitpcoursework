@@ -19,3 +19,16 @@ def test_optimizer_visits_all_customers() -> None:
     assert visited == [10, 11, 12]
     assert all(route.load <= request.vehicle.capacity for route in response.routes)
     assert response.total_distance > 0
+
+
+def test_optimizer_marks_single_oversized_time_route_as_infeasible() -> None:
+    request = OptimizationRequest(
+        depot=Customer(id=0, x=0, y=0, demand=0),
+        customers=[Customer(id=1, x=10, y=0, demand=1, service_time=6)],
+        vehicle=Vehicle(capacity=4, max_route_time=20),
+    )
+
+    response = NativeRouteOptimizer().optimize(request)
+
+    assert response.feasible is False
+    assert response.routes[0].duration == 26

@@ -12,8 +12,8 @@ sequenceDiagram
     A->>N: optimize(request)
     N->>C: routeopt_optimize(arrays)
     C->>G: solve(problem)
-    G->>O: evaluate_cycle_distances(population)
-    O-->>G: distance vector
+    G->>O: evaluate_fitness(population)
+    O-->>G: fitness vector
     G-->>C: Solution
     C-->>N: routes, offsets, distance
     N-->>A: OptimizationResponse

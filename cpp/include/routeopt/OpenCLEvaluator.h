@@ -12,7 +12,7 @@ public:
     bool available() const;
     std::string backend_name() const;
 
-    std::vector<double> evaluate_cycle_distances(
+    std::vector<double> evaluate_fitness(
         const Problem& problem,
         const std::vector<std::vector<std::size_t>>& population) const;
 };

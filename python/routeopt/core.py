@@ -26,6 +26,7 @@ class NativeRouteOptimizer:
         ids = [node.id for node in nodes]
         xy = np.array([[node.x, node.y] for node in nodes], dtype=np.float64).reshape(-1)
         demand = np.array([node.demand for node in nodes], dtype=np.float64)
+        service_time = np.array([node.service_time for node in nodes], dtype=np.float64)
 
         max_nodes = len(nodes) + len(request.customers)
         max_routes = len(request.customers) + 1
@@ -39,6 +40,7 @@ class NativeRouteOptimizer:
         rc = self._lib.routeopt_optimize(
             xy.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
             demand.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+            service_time.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
             len(nodes),
             0,
             request.vehicle.capacity,
@@ -65,19 +67,19 @@ class NativeRouteOptimizer:
             end = route_offsets[route_idx + 1]
             node_indexes = [route_nodes[i] for i in range(start, end)]
             customer_ids = [ids[index] for index in node_indexes]
-            load = sum(nodes[index].demand for index in node_indexes)
-            routes.append(RouteResult(customer_ids=customer_ids, load=load))
+            routes.append(_route_result(request, customer_ids))
 
         backend = "native-cpu"
         if request.settings.prefer_gpu:
             backend = (
-                "native-opencl-distance-cpu-constraints"
+                "native-opencl-fitness"
                 if self._opencl_available()
                 else "native-cpu-opencl-unavailable"
             )
         return OptimizationResponse(
             routes=routes,
             total_distance=total_distance.value,
+            total_duration=sum(route.duration for route in routes),
             feasible=bool(feasible.value),
             backend=backend,
         )
@@ -85,27 +87,31 @@ class NativeRouteOptimizer:
     def _fallback_optimize(self, request: OptimizationRequest) -> OptimizationResponse:
         routes: list[RouteResult] = []
         current: list[int] = []
-        load = 0.0
-        total = 0.0
-        prev = request.depot
+        feasible = True
         for customer in sorted(request.customers, key=lambda item: (item.x, item.y)):
-            if current and load + customer.demand > request.vehicle.capacity:
-                total += _distance(prev, request.depot)
-                routes.append(RouteResult(customer_ids=current, load=load))
+            candidate = _route_result(request, [*current, customer.id])
+            exceeds_capacity = candidate.load > request.vehicle.capacity
+            exceeds_time = _exceeds_time(request, candidate)
+            if current and (exceeds_capacity or exceeds_time):
+                routes.append(_route_result(request, current))
                 current = []
-                load = 0.0
-                prev = request.depot
-            total += _distance(prev, customer)
             current.append(customer.id)
-            load += customer.demand
-            prev = customer
         if current:
-            total += _distance(prev, request.depot)
-            routes.append(RouteResult(customer_ids=current, load=load))
-        return OptimizationResponse(routes=routes, total_distance=total, feasible=True, backend="python-fallback")
+            routes.append(_route_result(request, current))
+        for route in routes:
+            if route.load > request.vehicle.capacity or _exceeds_time(request, route):
+                feasible = False
+        return OptimizationResponse(
+            routes=routes,
+            total_distance=sum(route.distance for route in routes),
+            total_duration=sum(route.duration for route in routes),
+            feasible=feasible,
+            backend="python-fallback",
+        )
 
     def _configure_signatures(self) -> None:
         self._lib.routeopt_optimize.argtypes = [
+            ctypes.POINTER(ctypes.c_double),
             ctypes.POINTER(ctypes.c_double),
             ctypes.POINTER(ctypes.c_double),
             ctypes.c_int,
@@ -151,3 +157,23 @@ class NativeRouteOptimizer:
 
 def _distance(lhs, rhs) -> float:
     return float(((lhs.x - rhs.x) ** 2 + (lhs.y - rhs.y) ** 2) ** 0.5)
+
+
+def _route_result(request: OptimizationRequest, customer_ids: list[int]) -> RouteResult:
+    customers = {customer.id: customer for customer in request.customers}
+    points = [request.depot, *[customers[customer_id] for customer_id in customer_ids], request.depot]
+    distance = sum(_distance(points[index], points[index + 1]) for index in range(len(points) - 1))
+    load = sum(customers[customer_id].demand for customer_id in customer_ids)
+    service_time = sum(customers[customer_id].service_time for customer_id in customer_ids)
+    duration = distance + service_time
+    return RouteResult(
+        customer_ids=customer_ids,
+        load=load,
+        distance=distance,
+        duration=duration,
+        capacity_utilization=load / request.vehicle.capacity * 100,
+    )
+
+
+def _exceeds_time(request: OptimizationRequest, route: RouteResult) -> bool:
+    return request.vehicle.max_route_time > 0 and route.duration > request.vehicle.max_route_time

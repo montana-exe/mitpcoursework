@@ -215,17 +215,16 @@ Solution GeneticSolver::solve(const Problem& problem) {
     const auto elite_count = std::max<std::size_t>(1, static_cast<std::size_t>(config_.population_size * config_.elite_fraction));
 
     OpenCLEvaluator opencl;
-    const auto use_opencl_distance = config_.prefer_gpu && opencl.available();
+    const auto use_opencl_fitness = config_.prefer_gpu && opencl.available();
 
     for (std::size_t generation = 0; generation < config_.generations; ++generation) {
-        std::vector<double> gpu_cycle_distances;
-        if (use_opencl_distance) {
-            gpu_cycle_distances = opencl.evaluate_cycle_distances(problem, population);
+        std::vector<double> gpu_fitness;
+        if (use_opencl_fitness) {
+            gpu_fitness = opencl.evaluate_fitness(problem, population);
         }
         for (std::size_t i = 0; i < population.size(); ++i) {
             const auto solution = decode(problem, population[i]);
-            const auto distance_component = use_opencl_distance ? gpu_cycle_distances[i] : solution.total_distance;
-            fitness[i] = distance_component + solution.penalty;
+            fitness[i] = use_opencl_fitness ? gpu_fitness[i] : solution.total_distance + solution.penalty;
         }
         std::sort(order.begin(), order.end(), [&](std::size_t lhs, std::size_t rhs) {
             return fitness[lhs] < fitness[rhs];

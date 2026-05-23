@@ -3,6 +3,12 @@ from fastapi.testclient import TestClient
 from routeopt.api import app
 
 
+def test_interface_is_served_in_russian() -> None:
+    response = TestClient(app).get("/")
+    assert response.status_code == 200
+    assert "Оптимизация маршрутов доставки" in response.text
+
+
 def test_health_endpoint() -> None:
     response = TestClient(app).get("/health")
     assert response.status_code == 200
@@ -22,3 +28,5 @@ def test_optimize_endpoint() -> None:
     response = TestClient(app).post("/optimize", json=payload)
     assert response.status_code == 200
     assert response.json()["feasible"] is True
+    assert response.json()["routes"][0]["distance"] > 0
+    assert response.json()["total_duration"] > 0

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RouteOpt - маршруты доставки</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>RouteOpt</h1>
+      <p class="subtitle">Оптимизация маршрутов доставки</p>
+    </div>
+    <div class="system-state" aria-live="polite">
+      <span id="system-indicator" class="indicator"></span>
+      <div>
+        <strong id="system-title">Проверка системы...</strong>
+        <span id="system-detail">Подключение к API</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="controls" aria-label="Исходные данные">
+      <section class="panel">
+        <div class="section-title">
+          <h2>Условия доставки</h2>
+          <button class="info-btn" type="button" data-help="conditions" title="Пояснение параметров">?</button>
+        </div>
+        <div class="fields two">
+          <label>Грузоподъёмность
+            <span class="unit">ед. груза</span>
+            <input id="capacity" type="number" min="1" step="1" value="18">
+          </label>
+          <label>Макс. время рейса
+            <span class="unit">условных ед.</span>
+            <input id="max-time" type="number" min="0" step="1" value="175">
+          </label>
+        </div>
+        <div class="depot-row">
+          <span class="dot depot"></span>
+          <strong>Депо</strong>
+          <label>X <input id="depot-x" type="number" value="50" min="0" max="100"></label>
+          <label>Y <input id="depot-y" type="number" value="50" min="0" max="100"></label>
+        </div>
+      </section>
+
+      <section class="panel customers">
+        <div class="section-title">
+          <h2>Точки доставки</h2>
+          <div class="actions">
+            <button id="generate" class="ghost" type="button">Сгенерировать</button>
+            <button id="add-customer" class="ghost" type="button">Добавить</button>
+          </div>
+        </div>
+        <div class="table-head">
+          <span>Клиент</span><span>X</span><span>Y</span><span>Груз</span><span>Обсл.</span><span></span>
+        </div>
+        <div id="customer-rows" class="customer-rows"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>Параметры алгоритма</h2>
+          <button class="info-btn" type="button" data-help="algorithm" title="Пояснение параметров">?</button>
+        </div>
+        <div class="fields two">
+          <label>Популяция
+            <input id="population" type="number" min="8" max="4096" value="96">
+          </label>
+          <label>Поколения
+            <input id="generations" type="number" min="1" max="20000" value="250">
+          </label>
+          <label>Seed
+            <input id="seed" type="number" min="0" value="42">
+          </label>
+          <label class="toggle-label">GPU / OpenCL
+            <span class="toggle">
+              <input id="gpu" type="checkbox">
+              <span class="track"></span>
+            </span>
+          </label>
+        </div>
+        <button id="optimize" class="primary" type="button">Рассчитать маршруты</button>
+      </section>
+    </aside>
+
+    <section class="map-area" aria-label="Визуализация маршрутов">
+      <div class="map-toolbar">
+        <h2>Карта маршрутов</h2>
+        <div id="legend" class="legend"></div>
+      </div>
+      <canvas id="route-map" width="920" height="660"></canvas>
+      <p id="map-empty" class="map-empty">Задайте точки доставки и выполните расчёт.</p>
+    </section>
+
+    <aside class="results" aria-label="Результаты оптимизации">
+      <section class="panel result-summary">
+        <h2>Результат</h2>
+        <div id="result-placeholder" class="placeholder">Результат появится после расчёта.</div>
+        <div id="metrics" class="metrics hidden">
+          <div><span>Рейсов</span><strong id="metric-routes"></strong></div>
+          <div><span>Общая длина</span><strong id="metric-distance"></strong></div>
+          <div><span>Суммарное время</span><strong id="metric-duration"></strong></div>
+          <div><span>Ограничения</span><strong id="metric-feasible"></strong></div>
+        </div>
+        <div id="backend" class="backend hidden"></div>
+      </section>
+
+      <section class="panel route-list-panel">
+        <h2>Рейсы автомобиля</h2>
+        <div id="route-list" class="route-list placeholder">Нет рассчитанных маршрутов.</div>
+      </section>
+
+      <section class="panel explanation">
+        <div class="section-title">
+          <h2>Что означают данные</h2>
+        </div>
+        <dl id="help-content">
+          <dt>Рейс</dt>
+          <dd>Выезд из депо, посещение клиентов и возврат в депо.</dd>
+          <dt>Длина</dt>
+          <dd>Сумма расстояний между точками на координатной карте.</dd>
+          <dt>Режим расчёта</dt>
+          <dd>Показывает, использовано ли C++-ядро и доступен ли OpenCL.</dd>
+        </dl>
+      </section>
+
+      <details class="panel technical">
+        <summary>Технический ответ JSON</summary>
+        <pre id="json-output">Расчёт ещё не выполнен.</pre>
+      </details>
+    </aside>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

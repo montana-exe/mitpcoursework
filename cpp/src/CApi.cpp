@@ -11,6 +11,7 @@ extern "C" {
 int routeopt_optimize(
     const double* xy,
     const double* demand,
+    const double* service_time,
     int node_count,
     int depot_index,
     double vehicle_capacity,
@@ -28,7 +29,7 @@ int routeopt_optimize(
     double* out_total_distance,
     int* out_feasible) {
     try {
-        if (!xy || !demand || !route_nodes || !route_offsets || node_count <= 0) {
+        if (!xy || !demand || !service_time || !route_nodes || !route_offsets || node_count <= 0) {
             return -1;
         }
         routeopt::Problem problem;
@@ -41,7 +42,7 @@ int routeopt_optimize(
                 xy[i * 2],
                 xy[i * 2 + 1],
                 demand[i],
-                0.0,
+                service_time[i],
             });
         }
 

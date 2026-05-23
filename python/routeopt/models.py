@@ -40,10 +40,14 @@ class OptimizationRequest(BaseModel):
 class RouteResult(BaseModel):
     customer_ids: list[int]
     load: float
+    distance: float
+    duration: float
+    capacity_utilization: float
 
 
 class OptimizationResponse(BaseModel):
     routes: list[RouteResult]
     total_distance: float
+    total_duration: float
     feasible: bool
     backend: str
