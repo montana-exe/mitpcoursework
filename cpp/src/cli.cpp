@@ -10,7 +10,8 @@ routeopt::Problem sample_problem(std::size_t customers) {
     routeopt::Problem problem;
     problem.depot_index = 0;
     problem.vehicle_capacity = 25.0;
-    problem.max_route_time = 220.0;
+    problem.max_route_time = 8.0;
+    problem.average_speed_kmh = 45.0;
     problem.nodes.push_back({50.0, 50.0, 0.0, 0.0});
     for (std::size_t i = 1; i <= customers; ++i) {
         const auto x = static_cast<double>((i * 37) % 100);

@@ -9,6 +9,7 @@ __pycache__/
 *.dll
 benchmarks/results.json
 data/
+_site/
 docs/course-paper/*.pdf
 docs/course-paper/*.docx
 methodical-guidelines-2026.pdf

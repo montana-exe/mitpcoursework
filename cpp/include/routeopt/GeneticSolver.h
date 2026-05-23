@@ -20,6 +20,7 @@ struct Problem {
     std::size_t depot_index{0};
     double vehicle_capacity{0.0};
     double max_route_time{0.0};
+    double average_speed_kmh{40.0};
 };
 
 struct Route {

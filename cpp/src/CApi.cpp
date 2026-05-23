@@ -16,6 +16,7 @@ int routeopt_optimize(
     int depot_index,
     double vehicle_capacity,
     double max_route_time,
+    double average_speed_kmh,
     int population_size,
     int generations,
     unsigned long long seed,
@@ -36,6 +37,7 @@ int routeopt_optimize(
         problem.depot_index = static_cast<std::size_t>(depot_index);
         problem.vehicle_capacity = vehicle_capacity;
         problem.max_route_time = max_route_time;
+        problem.average_speed_kmh = average_speed_kmh;
         problem.nodes.reserve(static_cast<std::size_t>(node_count));
         for (int i = 0; i < node_count; ++i) {
             problem.nodes.push_back(routeopt::Customer{

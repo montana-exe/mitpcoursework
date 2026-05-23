@@ -83,7 +83,7 @@ h1, h2, p {
   height: calc(100vh - 68px);
   min-height: 650px;
   display: grid;
-  grid-template-columns: 370px minmax(440px, 1fr) 338px;
+  grid-template-columns: 400px minmax(420px, 1fr) 338px;
   gap: 14px;
   padding: 14px;
 }
@@ -161,6 +161,15 @@ button:hover {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.fields.conditions-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+
+.conditions-grid label {
+  font-size: 12px;
+}
+
 label {
   min-width: 0;
   font-size: 13px;
@@ -168,7 +177,9 @@ label {
 }
 
 .unit {
-  float: right;
+  display: block;
+  min-height: 15px;
+  margin-top: 2px;
   color: #839198;
   font-size: 11px;
 }
@@ -191,7 +202,7 @@ input[type="number"]:focus {
 }
 
 .depot-row {
-  margin-top: 12px;
+  margin-top: 15px;
   display: grid;
   grid-template-columns: 16px 52px 1fr 1fr;
   align-items: center;
@@ -424,7 +435,8 @@ input[type="number"]:focus {
 }
 
 .route-list-panel {
-  min-height: 170px;
+  flex: 1;
+  min-height: 250px;
 }
 
 .route-item {
@@ -473,24 +485,44 @@ input[type="number"]:focus {
   background: var(--accent);
 }
 
-.explanation dl {
-  margin: 0;
+.contextual-panel {
+  position: relative;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 5;
+  top: 47px;
+  right: 12px;
+  width: min(305px, calc(100% - 24px));
+  padding: 12px;
+  border: 1px solid #cbdadd;
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(23, 37, 45, 0.13);
+  color: var(--text);
+  background: var(--surface);
+  display: none;
   font-size: 12px;
-}
-
-.explanation dt {
-  margin: 9px 0 2px;
-  font-weight: 650;
-}
-
-.explanation dt:first-child {
-  margin-top: 0;
-}
-
-.explanation dd {
-  margin: 0;
   line-height: 1.42;
+}
+
+.tooltip.open {
+  display: block;
+}
+
+.tooltip strong {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+}
+
+.tooltip p {
+  margin: 6px 0 0;
   color: var(--muted);
+}
+
+.tooltip b {
+  color: var(--text);
 }
 
 .technical summary {
@@ -553,6 +585,10 @@ input[type="number"]:focus {
   }
 
   .fields.two {
+    grid-template-columns: 1fr;
+  }
+
+  .fields.conditions-grid {
     grid-template-columns: 1fr;
   }
 

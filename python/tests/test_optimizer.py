@@ -24,11 +24,11 @@ def test_optimizer_visits_all_customers() -> None:
 def test_optimizer_marks_single_oversized_time_route_as_infeasible() -> None:
     request = OptimizationRequest(
         depot=Customer(id=0, x=0, y=0, demand=0),
-        customers=[Customer(id=1, x=10, y=0, demand=1, service_time=6)],
-        vehicle=Vehicle(capacity=4, max_route_time=20),
+        customers=[Customer(id=1, x=10, y=0, demand=1, service_time=0.1)],
+        vehicle=Vehicle(capacity=4, max_route_time=0.5, average_speed_kmh=40),
     )
 
     response = NativeRouteOptimizer().optimize(request)
 
     assert response.feasible is False
-    assert response.routes[0].duration == 26
+    assert response.routes[0].duration == 0.6

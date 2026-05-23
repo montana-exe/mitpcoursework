@@ -5,8 +5,8 @@ from pydantic import BaseModel, Field, model_validator
 
 class Customer(BaseModel):
     id: int = Field(ge=0)
-    x: float
-    y: float
+    x: float = Field(ge=0, le=100)
+    y: float = Field(ge=0, le=100)
     demand: float = Field(ge=0)
     service_time: float = Field(default=0, ge=0)
 
@@ -14,6 +14,7 @@ class Customer(BaseModel):
 class Vehicle(BaseModel):
     capacity: float = Field(gt=0)
     max_route_time: float = Field(default=0, ge=0)
+    average_speed_kmh: float = Field(default=40, gt=0)
 
 
 class SolverSettings(BaseModel):

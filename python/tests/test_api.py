@@ -22,7 +22,7 @@ def test_optimize_endpoint() -> None:
             {"id": 1, "x": 1, "y": 0, "demand": 1},
             {"id": 2, "x": 0, "y": 1, "demand": 1},
         ],
-        "vehicle": {"capacity": 2},
+        "vehicle": {"capacity": 2, "average_speed_kmh": 40},
         "settings": {"population_size": 16, "generations": 10, "seed": 7},
     }
     response = TestClient(app).post("/optimize", json=payload)

@@ -25,9 +25,9 @@ def render_routes(request: OptimizationRequest, response: OptimizationResponse, 
         ys.append(request.depot.y)
         ax.plot(xs, ys, linewidth=1.5)
 
-    ax.set_title(f"RouteOpt: distance={response.total_distance:.2f}, routes={len(response.routes)}")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
+    ax.set_title(f"RouteOpt: distance={response.total_distance:.2f} km, routes={len(response.routes)}")
+    ax.set_xlabel("x, km")
+    ax.set_ylabel("y, km")
     ax.legend()
     ax.grid(True, alpha=0.3)
     output_path.parent.mkdir(parents=True, exist_ok=True)

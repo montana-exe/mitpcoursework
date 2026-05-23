@@ -22,11 +22,11 @@ double route_duration_with_return(const Problem& problem, const std::vector<std:
     double duration = 0.0;
     std::size_t prev = problem.depot_index;
     for (const auto node : route) {
-        duration += euclidean_distance(problem.nodes[prev], problem.nodes[node]);
+        duration += euclidean_distance(problem.nodes[prev], problem.nodes[node]) / problem.average_speed_kmh;
         duration += problem.nodes[node].service_time;
         prev = node;
     }
-    duration += euclidean_distance(problem.nodes[prev], problem.nodes[problem.depot_index]);
+    duration += euclidean_distance(problem.nodes[prev], problem.nodes[problem.depot_index]) / problem.average_speed_kmh;
     return duration;
 }
 
@@ -78,6 +78,9 @@ Solution GeneticSolver::decode(const Problem& problem, const std::vector<std::si
     }
     if (problem.vehicle_capacity <= 0.0) {
         throw std::invalid_argument("invalid problem: vehicle capacity must be positive");
+    }
+    if (problem.average_speed_kmh <= 0.0) {
+        throw std::invalid_argument("invalid problem: average speed must be positive");
     }
 
     Solution solution;

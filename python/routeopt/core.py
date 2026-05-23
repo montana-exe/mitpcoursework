@@ -45,6 +45,7 @@ class NativeRouteOptimizer:
             0,
             request.vehicle.capacity,
             request.vehicle.max_route_time,
+            request.vehicle.average_speed_kmh,
             request.settings.population_size,
             request.settings.generations,
             request.settings.seed,
@@ -118,6 +119,7 @@ class NativeRouteOptimizer:
             ctypes.c_int,
             ctypes.c_double,
             ctypes.c_double,
+            ctypes.c_double,
             ctypes.c_int,
             ctypes.c_int,
             ctypes.c_ulonglong,
@@ -165,7 +167,7 @@ def _route_result(request: OptimizationRequest, customer_ids: list[int]) -> Rout
     distance = sum(_distance(points[index], points[index + 1]) for index in range(len(points) - 1))
     load = sum(customers[customer_id].demand for customer_id in customer_ids)
     service_time = sum(customers[customer_id].service_time for customer_id in customer_ids)
-    duration = distance + service_time
+    duration = distance / request.vehicle.average_speed_kmh + service_time
     return RouteResult(
         customer_ids=customer_ids,
         load=load,

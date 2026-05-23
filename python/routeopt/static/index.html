@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RouteOpt - маршруты доставки</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="./static/styles.css">
 </head>
 <body>
   <header class="topbar">
@@ -23,26 +23,36 @@
 
   <main class="workspace">
     <aside class="controls" aria-label="Исходные данные">
-      <section class="panel">
+      <section class="panel contextual-panel">
         <div class="section-title">
           <h2>Условия доставки</h2>
-          <button class="info-btn" type="button" data-help="conditions" title="Пояснение параметров">?</button>
+          <button class="info-btn" type="button" data-tooltip="conditions-tooltip" title="Пояснение параметров">?</button>
         </div>
-        <div class="fields two">
+        <div id="conditions-tooltip" class="tooltip" role="tooltip">
+          <strong>Условия доставки</strong>
+          <p><b>Грузоподъёмность</b> — сколько килограммов машина увезёт за один рейс.</p>
+          <p><b>Время рейса</b> — сколько часов можно потратить на поездку и передачу заказов.</p>
+          <p><b>Скорость</b> нужна, чтобы перевести километры маршрута во время в пути.</p>
+        </div>
+        <div class="fields conditions-grid">
           <label>Грузоподъёмность
-            <span class="unit">ед. груза</span>
+            <span class="unit">кг</span>
             <input id="capacity" type="number" min="1" step="1" value="18">
           </label>
           <label>Макс. время рейса
-            <span class="unit">условных ед.</span>
-            <input id="max-time" type="number" min="0" step="1" value="175">
+            <span class="unit">ч</span>
+            <input id="max-time" type="number" min="0" step="0.25" value="4">
+          </label>
+          <label>Средняя скорость
+            <span class="unit">км/ч</span>
+            <input id="speed" type="number" min="1" step="1" value="45">
           </label>
         </div>
         <div class="depot-row">
           <span class="dot depot"></span>
           <strong>Депо</strong>
-          <label>X <input id="depot-x" type="number" value="50" min="0" max="100"></label>
-          <label>Y <input id="depot-y" type="number" value="50" min="0" max="100"></label>
+          <label>X, км <input id="depot-x" class="coordinate" type="number" value="50" min="0" max="100"></label>
+          <label>Y, км <input id="depot-y" class="coordinate" type="number" value="50" min="0" max="100"></label>
         </div>
       </section>
 
@@ -55,15 +65,21 @@
           </div>
         </div>
         <div class="table-head">
-          <span>Клиент</span><span>X</span><span>Y</span><span>Груз</span><span>Обсл.</span><span></span>
+          <span>Клиент</span><span>X, км</span><span>Y, км</span><span>Груз, кг</span><span>Мин.</span><span></span>
         </div>
         <div id="customer-rows" class="customer-rows"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel contextual-panel">
         <div class="section-title">
           <h2>Параметры алгоритма</h2>
-          <button class="info-btn" type="button" data-help="algorithm" title="Пояснение параметров">?</button>
+          <button class="info-btn" type="button" data-tooltip="algorithm-tooltip" title="Пояснение параметров">?</button>
+        </div>
+        <div id="algorithm-tooltip" class="tooltip" role="tooltip">
+          <strong>Как работает поиск</strong>
+          <p><b>Популяция</b> — сколько вариантов маршрута сравниваются одновременно.</p>
+          <p><b>Поколения</b> — сколько раз программа пробует улучшить маршрут.</p>
+          <p><b>GPU / OpenCL</b> — ускорение расчёта, когда подключено C++-ядро и совместимое устройство.</p>
         </div>
         <div class="fields two">
           <label>Популяция
@@ -113,20 +129,6 @@
         <div id="route-list" class="route-list placeholder">Нет рассчитанных маршрутов.</div>
       </section>
 
-      <section class="panel explanation">
-        <div class="section-title">
-          <h2>Что означают данные</h2>
-        </div>
-        <dl id="help-content">
-          <dt>Рейс</dt>
-          <dd>Выезд из депо, посещение клиентов и возврат в депо.</dd>
-          <dt>Длина</dt>
-          <dd>Сумма расстояний между точками на координатной карте.</dd>
-          <dt>Режим расчёта</dt>
-          <dd>Показывает, использовано ли C++-ядро и доступен ли OpenCL.</dd>
-        </dl>
-      </section>
-
       <details class="panel technical">
         <summary>Технический ответ JSON</summary>
         <pre id="json-output">Расчёт ещё не выполнен.</pre>
@@ -134,6 +136,6 @@
     </aside>
   </main>
 
-  <script src="/static/app.js"></script>
+  <script src="./static/app.js"></script>
 </body>
 </html>

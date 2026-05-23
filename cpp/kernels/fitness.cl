@@ -9,7 +9,8 @@ __kernel void route_fitness_kernel(
     const int chromosome_size,
     const int depot_index,
     const double vehicle_capacity,
-    const double max_route_time) {
+    const double max_route_time,
+    const double average_speed_kmh) {
     const int gid = get_global_id(0);
     const int offset = gid * chromosome_size;
     double distance = 0.0;
@@ -28,7 +29,8 @@ __kernel void route_fitness_kernel(
         dy = points[node].y - points[depot_index].y;
         const double return_leg = sqrt(dx * dx + dy * dy);
         const double candidate_load = route_load + demand[node];
-        const double candidate_duration = route_elapsed + leg + service_time[node] + return_leg;
+        const double candidate_duration = route_elapsed + leg / average_speed_kmh +
+                                          service_time[node] + return_leg / average_speed_kmh;
 
         if (has_nodes && (candidate_load > vehicle_capacity ||
             (max_route_time > 0.0 && candidate_duration > max_route_time))) {
@@ -36,8 +38,8 @@ __kernel void route_fitness_kernel(
             dy = points[prev].y - points[depot_index].y;
             const double close_leg = sqrt(dx * dx + dy * dy);
             distance += close_leg;
-            if (max_route_time > 0.0 && route_elapsed + close_leg > max_route_time) {
-                penalty += 1000000.0 + route_elapsed + close_leg - max_route_time;
+            if (max_route_time > 0.0 && route_elapsed + close_leg / average_speed_kmh > max_route_time) {
+                penalty += 1000000.0 + route_elapsed + close_leg / average_speed_kmh - max_route_time;
             }
             prev = depot_index;
             route_load = 0.0;
@@ -48,7 +50,7 @@ __kernel void route_fitness_kernel(
         }
 
         distance += leg;
-        route_elapsed += leg + service_time[node];
+        route_elapsed += leg / average_speed_kmh + service_time[node];
         route_load += demand[node];
         prev = node;
         has_nodes = 1;
@@ -61,7 +63,7 @@ __kernel void route_fitness_kernel(
         const double dy = points[prev].y - points[depot_index].y;
         const double return_leg = sqrt(dx * dx + dy * dy);
         distance += return_leg;
-        const double duration = route_elapsed + return_leg;
+        const double duration = route_elapsed + return_leg / average_speed_kmh;
         if (max_route_time > 0.0 && duration > max_route_time) {
             penalty += 1000000.0 + duration - max_route_time;
         }

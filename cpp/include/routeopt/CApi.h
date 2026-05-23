@@ -16,6 +16,7 @@ ROUTEOPT_API int routeopt_optimize(
     int depot_index,
     double vehicle_capacity,
     double max_route_time,
+    double average_speed_kmh,
     int population_size,
     int generations,
     unsigned long long seed,

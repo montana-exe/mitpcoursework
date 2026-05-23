@@ -7,7 +7,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(ROUTEOPT_ENABLE_OPENCL "Build with OpenCL support when available" ON)
 
-add_library(routeopt_core
+add_library(routeopt_core SHARED
     cpp/src/GeneticSolver.cpp
     cpp/src/OpenCLEvaluator.cpp
     cpp/src/CApi.cpp

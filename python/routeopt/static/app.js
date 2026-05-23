@@ -4,9 +4,12 @@ const canvas = document.getElementById("route-map");
 const context = canvas.getContext("2d");
 let nextId = 1;
 let latestResponse = null;
+const isStaticDemo = window.location.hostname.endsWith("github.io") ||
+  new URLSearchParams(window.location.search).has("demo");
 
 const backendInfo = {
   "python-fallback": ["Демонстрационный режим Python", "Нативная C++ библиотека не подключена. Ограничения учитываются, но производительный расчёт требует сборки ядра."],
+  "browser-demo": ["Демо на GitHub Pages", "Расчёт выполняется в браузере для показа интерфейса. Полный генетический алгоритм запускается локально через API."],
   "native-cpu": ["C++ / CPU", "Маршруты рассчитаны нативным C++-ядром на центральном процессоре."],
   "native-cpu-opencl-unavailable": ["C++ / CPU", "Запрошено GPU-ускорение, но OpenCL-устройство не найдено; применён CPU."],
   "native-opencl-fitness": ["C++ / OpenCL", "Функция качества популяции рассчитана через OpenCL с учётом ограничений рейсов."]
@@ -14,6 +17,12 @@ const backendInfo = {
 
 function numberValue(id) {
   return Number(document.getElementById(id).value);
+}
+
+function clampCoordinate(input) {
+  const value = Number(input.value);
+  if (!Number.isFinite(value)) return;
+  input.value = String(Math.max(0, Math.min(100, value)));
 }
 
 function addCustomer(values = {}) {
@@ -24,14 +33,17 @@ function addCustomer(values = {}) {
   row.dataset.id = String(id);
   row.innerHTML = `
     <span class="customer-id">N${id}</span>
-    <input aria-label="Координата X клиента ${id}" data-field="x" type="number" min="0" max="100" value="${values.x ?? 20}">
-    <input aria-label="Координата Y клиента ${id}" data-field="y" type="number" min="0" max="100" value="${values.y ?? 20}">
+    <input class="coordinate" aria-label="Координата X клиента ${id}" data-field="x" type="number" min="0" max="100" value="${values.x ?? 20}">
+    <input class="coordinate" aria-label="Координата Y клиента ${id}" data-field="y" type="number" min="0" max="100" value="${values.y ?? 20}">
     <input aria-label="Груз клиента ${id}" data-field="demand" type="number" min="0" value="${values.demand ?? 3}">
     <input aria-label="Время обслуживания клиента ${id}" data-field="service_time" type="number" min="0" value="${values.service_time ?? 4}">
     <button class="remove" type="button" title="Удалить клиента" aria-label="Удалить клиента ${id}">&times;</button>`;
   row.querySelector(".remove").addEventListener("click", () => {
     row.remove();
     drawMap(null);
+  });
+  row.querySelectorAll(".coordinate").forEach((input) => {
+    input.addEventListener("change", () => clampCoordinate(input));
   });
   rowsContainer.appendChild(row);
 }
@@ -72,12 +84,16 @@ function requestBody() {
     x: Number(row.querySelector('[data-field="x"]').value),
     y: Number(row.querySelector('[data-field="y"]').value),
     demand: Number(row.querySelector('[data-field="demand"]').value),
-    service_time: Number(row.querySelector('[data-field="service_time"]').value)
+    service_time: Number(row.querySelector('[data-field="service_time"]').value) / 60
   }));
   return {
     depot: { id: 0, x: numberValue("depot-x"), y: numberValue("depot-y"), demand: 0, service_time: 0 },
     customers,
-    vehicle: { capacity: numberValue("capacity"), max_route_time: numberValue("max-time") },
+    vehicle: {
+      capacity: numberValue("capacity"),
+      max_route_time: numberValue("max-time"),
+      average_speed_kmh: numberValue("speed")
+    },
     settings: {
       population_size: numberValue("population"),
       generations: numberValue("generations"),
@@ -91,6 +107,12 @@ async function checkSystem() {
   const indicator = document.getElementById("system-indicator");
   const title = document.getElementById("system-title");
   const detail = document.getElementById("system-detail");
+  if (isStaticDemo) {
+    indicator.classList.add("ready");
+    title.textContent = "Онлайн-демо";
+    detail.textContent = "Расчёт выполняется в браузере";
+    return;
+  }
   try {
     const response = await fetch("/health");
     const data = await response.json();
@@ -110,19 +132,30 @@ async function optimize() {
     window.alert("Добавьте хотя бы одну точку доставки.");
     return;
   }
+  const invalidNode = [body.depot, ...body.customers].find((node) => (
+    node.x < 0 || node.x > 100 || node.y < 0 || node.y > 100
+  ));
+  if (invalidNode) {
+    window.alert("Координаты должны находиться внутри карты: от 0 до 100 км по X и Y.");
+    return;
+  }
   button.disabled = true;
   button.textContent = "Выполняется расчёт...";
   try {
-    const response = await fetch("/optimize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(JSON.stringify(error.detail));
+    if (isStaticDemo) {
+      latestResponse = browserDemoOptimize(body);
+    } else {
+      const response = await fetch("./optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(JSON.stringify(error.detail));
+      }
+      latestResponse = await response.json();
     }
-    latestResponse = await response.json();
     renderResults(body, latestResponse);
     drawMap(latestResponse, body);
   } catch (error) {
@@ -137,8 +170,8 @@ function renderResults(body, result) {
   document.getElementById("result-placeholder").classList.add("hidden");
   document.getElementById("metrics").classList.remove("hidden");
   document.getElementById("metric-routes").textContent = String(result.routes.length);
-  document.getElementById("metric-distance").textContent = `${result.total_distance.toFixed(2)} ед.`;
-  document.getElementById("metric-duration").textContent = `${result.total_duration.toFixed(2)} ед.`;
+  document.getElementById("metric-distance").textContent = `${result.total_distance.toFixed(2)} км`;
+  document.getElementById("metric-duration").textContent = `${result.total_duration.toFixed(2)} ч`;
   const feasible = document.getElementById("metric-feasible");
   feasible.textContent = result.feasible ? "соблюдены" : "нарушены";
   feasible.className = result.feasible ? "good" : "bad";
@@ -159,10 +192,10 @@ function renderResults(body, result) {
     item.innerHTML = `
       <div class="route-title">
         <span class="route-name"><span class="dot" style="background:${color}"></span>Рейс ${index + 1}</span>
-        <strong>${route.distance.toFixed(2)} ед.</strong>
+        <strong>${route.distance.toFixed(2)} км</strong>
       </div>
       <div class="route-details">Депо -> ${clientText} -> Депо<br>
-      Груз: ${route.load.toFixed(1)} из ${body.vehicle.capacity.toFixed(1)} ед. · Время: ${route.duration.toFixed(2)} ед.</div>
+      Груз: ${route.load.toFixed(1)} из ${body.vehicle.capacity.toFixed(1)} кг · Время: ${route.duration.toFixed(2)} ч</div>
       <div class="bar"><div class="bar-fill" style="width:${Math.min(route.capacity_utilization, 100)}%;background:${color}"></div></div>`;
     list.appendChild(item);
   });
@@ -198,6 +231,11 @@ function drawMap(result, body = requestBody()) {
     context.lineTo(width - padding, y);
     context.stroke();
   }
+  context.fillStyle = "#839198";
+  context.font = "11px Segoe UI";
+  context.fillText("0 км", padding - 4, height - padding + 18);
+  context.fillText("100 км", width - padding - 32, height - padding + 18);
+  context.fillText("100 км", padding - 32, padding + 4);
 
   const toPoint = (node) => ({
     x: padding + (node.x / 100) * (width - padding * 2),
@@ -254,33 +292,78 @@ function updateLegend(result) {
   });
 }
 
-function showHelp(type) {
-  const help = document.getElementById("help-content");
-  if (type === "algorithm") {
-    help.innerHTML = `
-      <dt>Популяция</dt><dd>Количество вариантов маршрута, сравниваемых в одном поколении.</dd>
-      <dt>Поколения</dt><dd>Число циклов отбора, скрещивания и мутации решений.</dd>
-      <dt>Seed</dt><dd>Число для повторяемости эксперимента с теми же данными.</dd>
-      <dt>GPU / OpenCL</dt><dd>Запрос ускоренной оценки вариантов маршрута при собранном C++-ядре и доступном устройстве.</dd>`;
-  } else {
-    help.innerHTML = `
-      <dt>Грузоподъёмность</dt><dd>Предельная сумма груза клиентов в одном рейсе.</dd>
-      <dt>Макс. время рейса</dt><dd>Предел пути и обслуживания клиентов до возврата в депо; 0 отключает предел.</dd>
-      <dt>Обсл.</dt><dd>Время передачи заказа одному клиенту.</dd>
-      <dt>Депо</dt><dd>Начальная и конечная точка каждого рейса.</dd>`;
+function distance(lhs, rhs) {
+  return Math.hypot(lhs.x - rhs.x, lhs.y - rhs.y);
+}
+
+function routeMetrics(body, customerIds) {
+  const customers = new Map(body.customers.map((customer) => [customer.id, customer]));
+  const points = [body.depot, ...customerIds.map((id) => customers.get(id)), body.depot];
+  let routeDistance = 0;
+  for (let index = 0; index < points.length - 1; index += 1) {
+    routeDistance += distance(points[index], points[index + 1]);
   }
+  const load = customerIds.reduce((sum, id) => sum + customers.get(id).demand, 0);
+  const serviceTime = customerIds.reduce((sum, id) => sum + customers.get(id).service_time, 0);
+  return {
+    customer_ids: customerIds,
+    load,
+    distance: routeDistance,
+    duration: routeDistance / body.vehicle.average_speed_kmh + serviceTime,
+    capacity_utilization: load / body.vehicle.capacity * 100
+  };
+}
+
+function browserDemoOptimize(body) {
+  const ordered = [...body.customers].sort((a, b) => a.x - b.x || a.y - b.y);
+  const routes = [];
+  let current = [];
+  ordered.forEach((customer) => {
+    const candidate = routeMetrics(body, [...current, customer.id]);
+    const exceeds = candidate.load > body.vehicle.capacity ||
+      (body.vehicle.max_route_time > 0 && candidate.duration > body.vehicle.max_route_time);
+    if (current.length && exceeds) {
+      routes.push(routeMetrics(body, current));
+      current = [];
+    }
+    current.push(customer.id);
+  });
+  if (current.length) routes.push(routeMetrics(body, current));
+  const feasible = routes.every((route) => (
+    route.load <= body.vehicle.capacity &&
+    (body.vehicle.max_route_time === 0 || route.duration <= body.vehicle.max_route_time)
+  ));
+  return {
+    routes,
+    total_distance: routes.reduce((sum, route) => sum + route.distance, 0),
+    total_duration: routes.reduce((sum, route) => sum + route.duration, 0),
+    feasible,
+    backend: "browser-demo"
+  };
 }
 
 document.getElementById("add-customer").addEventListener("click", () => addCustomer());
 document.getElementById("generate").addEventListener("click", generateCustomers);
 document.getElementById("optimize").addEventListener("click", optimize);
+document.querySelectorAll(".coordinate").forEach((input) => {
+  input.addEventListener("change", () => clampCoordinate(input));
+});
 document.querySelectorAll(".info-btn").forEach((button) => {
-  button.addEventListener("click", () => showHelp(button.dataset.help));
+  const tooltip = document.getElementById(button.dataset.tooltip);
+  button.addEventListener("mouseenter", () => tooltip.classList.add("open"));
+  button.addEventListener("mouseleave", () => tooltip.classList.remove("open"));
+  button.addEventListener("focus", () => tooltip.classList.add("open"));
+  button.addEventListener("blur", () => tooltip.classList.remove("open"));
+  button.addEventListener("click", () => tooltip.classList.toggle("open"));
+});
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".contextual-panel")) {
+    document.querySelectorAll(".tooltip").forEach((tooltip) => tooltip.classList.remove("open"));
+  }
 });
 window.addEventListener("resize", resizeCanvas);
 
 setSampleCustomers();
-showHelp("conditions");
 checkSystem();
 requestAnimationFrame(resizeCanvas);
 optimize();

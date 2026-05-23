@@ -1,0 +1,36 @@
+name: pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v6
+      - name: Prepare static demo
+        run: |
+          mkdir -p _site/static
+          cp python/routeopt/static/index.html _site/index.html
+          cp python/routeopt/static/app.js _site/static/app.js
+          cp python/routeopt/static/styles.css _site/static/styles.css
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v5
